@@ -2,24 +2,18 @@ package main
 
 import (
 	"context"
-	"log"
-	"net/http"
-
-	// "os"
-	"time"
-
-	"github.com/joho/godotenv"
+	"errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"log"
+	"net/http"
+	"time"
 )
 
-// portNumber is the port number that the server will listen on
-const portNumber = ":80"
-
-// App is the struct that holds the MongoDB collection
-type App struct {
+type MongoImageStorage struct {
 	database *mongo.Database
+	config   ImageServiceConfig
 }
 
 // MongoFields is the struct that defines the fields in the MongoDB database
@@ -31,42 +25,27 @@ type MongoFields struct {
 	Uploaded time.Time          `bson:"uploaded" json:"uploaded"`
 }
 
-// main is the entry point for the application
-func main() {
-	log.Println("Starting server on port", portNumber)
+func (m *MongoImageStorage) Store(fileName string, imageData []byte) (string, error) {
+	imageType := http.DetectContentType(imageData)
 
-	// Load the .env file
-	err := godotenv.Load()
+	image := MongoFields{
+		Name:     fileName,
+		Data:     imageData,
+		Type:     imageType,
+		Uploaded: time.Now(),
+	}
+
+	// Insert the image into the database
+	storedImage, err := m.database.Collection(m.config.mongoCollection).InsertOne(context.Background(), image)
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		return "", errors.New("error inserting image data into MongoDB")
 	}
-
-	// Declare database client
-	client := connectToDB()
-	defer client.Disconnect(context.Background())
-
-	// Declare the app
-	app := App{
-		database: client.Database("GolangImageTest"),
-	}
-
-	// Declare the server
-	srv := &http.Server{
-		Addr:    portNumber,
-		Handler: app.routes(),
-	}
-
-	// Start the server
-	err = srv.ListenAndServe()
-	if err != nil {
-		log.Fatal(err)
-	}
+	return m.config.host + "/" + storedImage.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-// connectToDB connects to the MongoDB database and returns the collection
-func connectToDB() *mongo.Client {
+func NewMongoImageStorage(config ImageServiceConfig) ImageStorage {
+	// connectToDB connects to the MongoDB database and returns the collection
 	log.Println("Connecting to MongoDB...")
-
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -75,7 +54,7 @@ func connectToDB() *mongo.Client {
 	// client, err := mongo.Connect(ctx, clientOptions)
 
 	// Use this for when running locally
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://127.0.0.1:27017/"))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.mongoURI))
 
 	// Connect to MongoDB Atlas
 	// mongodbURI := os.Getenv("MONGODB_URI")
@@ -94,5 +73,10 @@ func connectToDB() *mongo.Client {
 
 	// collection := client.Database("GolangImageTest").Collection("images")
 
-	return client
+	storage := MongoImageStorage{
+		database: client.Database(config.mongoDatabase),
+	}
+
+	return &storage
+
 }

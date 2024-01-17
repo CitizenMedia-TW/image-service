@@ -9,12 +9,11 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"time"
 )
 
-type Response struct {
+type UploadImageResponse struct {
 	Message string `json:"message"`
-	Id      string `json:"id"`
+	Url     string `json:"url"`
 }
 
 // uploadImage is the handler for the upload route
@@ -26,10 +25,15 @@ func (a *App) uploadImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the collection name from the query string
-	collectionName := r.URL.Query().Get("collection")
+	//collectionName := r.URL.Query().Get("collection")
 
 	// Parse our multipart form, 10 << 20 specifies a maximum upload of 10 MB files.
-	r.ParseMultipartForm(10 << 20)
+	parseErr := r.ParseMultipartForm(10 << 20)
+
+	if parseErr != nil {
+		http.Error(w, "Could not parse multipart form", http.StatusBadRequest)
+		return
+	}
 
 	// Get the file from the formdata
 	file, handler, err := r.FormFile("image")
@@ -45,29 +49,17 @@ func (a *App) uploadImage(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error Reading the File")
 		fmt.Println(err)
 	}
-	imageType := http.DetectContentType(imageData)
-	log.Println(imageType)
 
-	// Construct the new image
-	image := MongoFields{
-		Name:     handler.Filename,
-		Data:     imageData,
-		Type:     imageType,
-		Uploaded: time.Now(),
-	}
-
-	// Insert the image into the database
-	storedImage, err := a.database.Collection(collectionName).InsertOne(context.Background(), image)
+	url, err := a.storage.Store(handler.Filename, imageData)
 	if err != nil {
-		http.Error(w, "Error inserting image data into MongoDB", http.StatusInternalServerError)
+		http.Error(w, url, http.StatusInternalServerError)
 		return
 	}
-	primitiveId := storedImage.InsertedID.(primitive.ObjectID)
 
 	// Respond with success message
-	res := Response{
+	res := UploadImageResponse{
 		Message: "Image uploaded successfully",
-		Id:      primitiveId.Hex(),
+		Url:     url,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
@@ -76,7 +68,13 @@ func (a *App) uploadImage(w http.ResponseWriter, r *http.Request) {
 }
 
 // displayImage is the handler for the display route
+// should only be used when the image storage is mongodb
 func (a *App) displayImage(w http.ResponseWriter, r *http.Request) {
+	mongoStorage := a.storage.(*MongoImageStorage)
+	if mongoStorage == nil {
+		http.Error(w, "Server implementation error, contact admin", http.StatusInternalServerError)
+		return
+	}
 	// Check if the request is a GET request
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -99,7 +97,7 @@ func (a *App) displayImage(w http.ResponseWriter, r *http.Request) {
 
 	// Retrieve the image from MongoDB by _id
 	var result MongoFields
-	err = a.database.Collection(collectionName).FindOne(context.Background(), bson.M{"_id": docId}).Decode(&result)
+	err = mongoStorage.database.Collection(collectionName).FindOne(context.Background(), bson.M{"_id": docId}).Decode(&result)
 	if err != nil {
 		log.Print(err)
 		http.Error(w, "Error retrieving image from MongoDB", http.StatusInternalServerError)
@@ -118,6 +116,7 @@ func (a *App) displayImage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+/**
 // deleteImage is the handler for the delete route
 func (a *App) deleteImage(w http.ResponseWriter, r *http.Request) {
 	// Check if the request is a DELETE request
@@ -149,10 +148,12 @@ func (a *App) deleteImage(w http.ResponseWriter, r *http.Request) {
 	log.Println("Deleted", result.DeletedCount, "documents")
 
 	// Respond with success Message
-	res := Response{
+	res := UploadImageResponse{
 		Message: fmt.Sprintf("Deleted %d documents", result.DeletedCount),
 		Id:      targetId,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
 }
+
+*/

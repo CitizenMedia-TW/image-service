@@ -14,7 +14,7 @@ func (a *App) routes() http.Handler {
 	mux.Handle("/", a.middlewares(http.HandlerFunc(a.home)))
 	mux.Handle("/upload", a.middlewares(http.HandlerFunc(a.uploadImage)))
 	mux.Handle("/display", a.middlewares(http.HandlerFunc(a.displayImage)))
-	mux.Handle("/delete", a.middlewares(http.HandlerFunc(a.deleteImage)))
+	//mux.Handle("/delete", a.middlewares(http.HandlerFunc(a.deleteImage)))
 
 	// mux.HandleFunc("/", a.home)
 	// mux.HandleFunc("/upload", a.uploadImage)
