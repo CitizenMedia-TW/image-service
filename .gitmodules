@@ -1,0 +1,3 @@
+[submodule "protobuffs"]
+	path = protobuffs
+	url = git@github.com:CitizenMedia-TW/protobuffs.git

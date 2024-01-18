@@ -1,4 +1,4 @@
-package main
+package img_storage
 
 type ImageStorage interface {
 	// Store
