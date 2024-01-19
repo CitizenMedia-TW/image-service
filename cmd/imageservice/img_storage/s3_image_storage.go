@@ -40,7 +40,7 @@ func NewS3ImageStorage(config cnf.ImageServiceConfig) S3ImageStorage {
 	sess := session.Must(session.NewSession(&aws.Config{
 		Credentials:                   credentials.NewStaticCredentials(config.S3KeyId, config.S3KeyValue, ""),
 		CredentialsChainVerboseErrors: aws.Bool(true),
-		Region:                        aws.String("ap-northeast-1"),
+		Region:                        aws.String(config.AwsRegion),
 	}))
 	svc := s3.New(sess)
 	return S3ImageStorage{
