@@ -8,15 +8,18 @@ res: `Hello from a HandleFunc #1`
 
 _*GET /upload*_  
 
-req: form-data `image: <file>` params `?collection=<collection name>`  
-res: json `message: string, id: string`
+req: form-data 
+```
+image: <file>
+uploader: "userId"
+usage: 1 //1 is for story, check protobuf for enums
+```  
 
-_*GET /display*_  
-
-req: params `?_id=<image object id>&collection=<collection name>`  
-res: Content-Type will be a file
-
-_*DELETE /delete*_  
-
-req: params `?_id=<image object id>&collection=<collection name>`  
-req: json `message: string, id: string`
+res: 
+```json
+{
+  "message": "",
+  "url": "url",
+  "imageId": "id"
+}
+```

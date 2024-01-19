@@ -16,6 +16,7 @@ import (
 type S3ImageStorage struct {
 	svc    *s3.S3
 	config cnf.ImageServiceConfig
+	ImageStorage
 }
 
 func (m S3ImageStorage) Store(fileSuffix string, imageData []byte) (string, error) {
@@ -34,6 +35,14 @@ func (m S3ImageStorage) Store(fileSuffix string, imageData []byte) (string, erro
 		return "", errors.Join(errors.New("could not upload to s3"), err)
 	}
 	return key, nil
+}
+
+func (m S3ImageStorage) Delete(path string) error {
+	_, err := m.svc.DeleteObject(&s3.DeleteObjectInput{
+		Bucket: aws.String(m.config.S3Bucket),
+		Key:    aws.String(path),
+	})
+	return err
 }
 
 func NewS3ImageStorage(config cnf.ImageServiceConfig) S3ImageStorage {

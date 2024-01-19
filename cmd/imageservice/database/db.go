@@ -27,6 +27,7 @@ type Db interface {
 	GetTmpImgInfo(ctx context.Context, imageId string) (entities.TmpImage, error)
 
 	CleanExpired(ctx context.Context, notConfirmedAfter time.Duration) (int64, error)
+	DeletePermanent(ctx context.Context, imageId string) (string, error)
 }
 
 type MongoDB struct {
@@ -63,7 +64,7 @@ func (db MongoDB) GetTmpImgInfo(ctx context.Context, imageId string) (entities.T
 		return entities.TmpImage{}, err
 	}
 
-	result := db.inner.Collection(TmpCollection).FindOne(ctx, oImageId)
+	result := db.inner.Collection(TmpCollection).FindOne(ctx, bson.M{"_id": oImageId})
 	err = result.Err()
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -77,10 +78,35 @@ func (db MongoDB) GetTmpImgInfo(ctx context.Context, imageId string) (entities.T
 }
 
 func (db MongoDB) CleanExpired(ctx context.Context, notConfirmedAfter time.Duration) (int64, error) {
-	var filter = bson.D{}
+	before := primitive.NewDateTimeFromTime(time.Now().Add(-1 * notConfirmedAfter))
+	var filter = bson.M{"uploaded_at": bson.M{"$lt": before}}
 	result, err := db.inner.Collection(TmpCollection).DeleteMany(ctx, filter)
 	if err != nil {
 		return 0, err
 	}
 	return result.DeletedCount, nil
+}
+
+func (db MongoDB) DeletePermanent(ctx context.Context, imageId string) (string, error) {
+
+	oImageId, err := primitive.ObjectIDFromHex(imageId)
+	if err != nil {
+		return "", err
+	}
+
+	result := db.inner.Collection(PermanentCollection).FindOneAndDelete(ctx, bson.D{{"_id", oImageId}})
+
+	if result.Err() != nil {
+		if result.Err() == mongo.ErrNoDocuments {
+			return "", errors.New("cannot find image to delete")
+		}
+		return "", result.Err()
+	}
+
+	var img = entities.PermanentImage{}
+	err = result.Decode(&img)
+	if err != nil {
+		return "", err
+	}
+	return img.Path, err
 }

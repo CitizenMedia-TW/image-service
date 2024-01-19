@@ -24,6 +24,8 @@ func StartServer() {
 	var imageStorage img_storage.ImageStorage = img_storage.NewS3ImageStorage(config)
 	var db database.Db = database.NewMongoDB(config)
 
+	go StartGrpc(imageStorage, db)
+
 	var app = App{
 		storage:  imageStorage,
 		database: db,
