@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"image-service/cmd/imageservice/database/entities"
-	image_service "image-service/protobuffs"
+	image_service2 "image-service/protobuffs/image-service"
 	"io"
 	"net/http"
 	"strconv"
@@ -39,8 +39,8 @@ func (a *App) uploadImage(w http.ResponseWriter, r *http.Request) {
 	uploader := r.FormValue("uploader")
 	usageId, _ := strconv.Atoi(r.FormValue("usage"))
 
-	usage := image_service.ParseUsage(usageId)
-	if usage == image_service.ImageUsage_Undefined {
+	usage := image_service2.ParseUsage(usageId)
+	if usage == image_service2.ImageUsage_Undefined {
 		http.Error(w, "Invalid image usage.", http.StatusBadRequest)
 		return
 	}

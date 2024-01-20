@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"image-service/cmd/imageservice/api"
-	imageService "image-service/protobuffs"
+	"image-service/protobuffs/image-service"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -43,10 +43,10 @@ func TestUploadAndDelete(t *testing.T) {
 
 	conn, err := grpc.Dial("localhost:1111", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err)
-	client := imageService.NewImageServiceClient(conn)
+	client := image_service.NewImageServiceClient(conn)
 
 	//confirm usage
-	res2, err := client.ConfirmImageUse(context.TODO(), &imageService.ConfirmImageUsedRequest{
+	res2, err := client.ConfirmImageUse(context.TODO(), &image_service.ConfirmImageUsedRequest{
 		ImageId: response.ImageId,
 		Strict:  false,
 	})
@@ -54,7 +54,7 @@ func TestUploadAndDelete(t *testing.T) {
 	assert.Equal(t, res2.Success, true)
 
 	//delete permanent image
-	res, err := client.DeleteImage(context.TODO(), &imageService.DeleteImageRequest{ImageId: response.ImageId})
+	res, err := client.DeleteImage(context.TODO(), &image_service.DeleteImageRequest{ImageId: response.ImageId})
 	assert.NoError(t, err)
 	assert.Equal(t, true, res.Success)
 	r, err = http.Get(response.Url)

@@ -10,7 +10,7 @@ import (
 	"image-service/cmd/imageservice/database"
 	"image-service/cmd/imageservice/database/entities"
 	"image-service/cmd/imageservice/img_storage"
-	imageService "image-service/protobuffs"
+	"image-service/protobuffs/image-service"
 	"log"
 	"net"
 	"time"
@@ -19,7 +19,7 @@ import (
 type GrpcImageService struct {
 	database     database.Db
 	imageStorage img_storage.ImageStorage
-	imageService.ImageServiceServer
+	image_service.ImageServiceServer
 }
 
 func StartGrpc(storage img_storage.ImageStorage, db database.Db) {
@@ -31,7 +31,7 @@ func StartGrpc(storage img_storage.ImageStorage, db database.Db) {
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 
-	imageService.RegisterImageServiceServer(grpcServer, GrpcImageService{
+	image_service.RegisterImageServiceServer(grpcServer, GrpcImageService{
 		imageStorage: storage,
 		database:     db,
 	})
@@ -42,7 +42,7 @@ func StartGrpc(storage img_storage.ImageStorage, db database.Db) {
 	}
 }
 
-func (s GrpcImageService) ConfirmImageUse(ctx context.Context, req *imageService.ConfirmImageUsedRequest) (*imageService.ConfirmImageUsedResponse, error) {
+func (s GrpcImageService) ConfirmImageUse(ctx context.Context, req *image_service.ConfirmImageUsedRequest) (*image_service.ConfirmImageUsedResponse, error) {
 	tmpImage, err := s.database.GetTmpImgInfo(ctx, req.ImageId)
 
 	if err == database.ErrNotFound {
@@ -60,19 +60,19 @@ func (s GrpcImageService) ConfirmImageUse(ctx context.Context, req *imageService
 	if err != nil {
 		return nil, status.Error(codes.Internal, errors.Join(errors.New("error while storing permanent image"), err).Error())
 	}
-	return &imageService.ConfirmImageUsedResponse{
+	return &image_service.ConfirmImageUsedResponse{
 		Success: true,
 	}, nil
 }
 
-func (s GrpcImageService) CleanExpiredTmp(ctx context.Context, _ *imageService.Empty) (*imageService.CleanExpiredTmpResponse, error) {
+func (s GrpcImageService) CleanExpiredTmp(ctx context.Context, _ *image_service.Empty) (*image_service.CleanExpiredTmpResponse, error) {
 	cleaned, err := s.database.CleanExpired(ctx, time.Hour*24*30)
-	return &imageService.CleanExpiredTmpResponse{
+	return &image_service.CleanExpiredTmpResponse{
 		Cleaned: cleaned,
 	}, err
 }
 
-func (s GrpcImageService) DeleteImage(ctx context.Context, r *imageService.DeleteImageRequest) (*imageService.DeleteImageResponse, error) {
+func (s GrpcImageService) DeleteImage(ctx context.Context, r *image_service.DeleteImageRequest) (*image_service.DeleteImageResponse, error) {
 	deletedPath, err := s.database.DeletePermanent(ctx, r.ImageId)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -86,7 +86,7 @@ func (s GrpcImageService) DeleteImage(ctx context.Context, r *imageService.Delet
 		return nil, err
 	}
 
-	return &imageService.DeleteImageResponse{
+	return &image_service.DeleteImageResponse{
 		Success: err == nil,
 	}, err
 }
