@@ -2,7 +2,7 @@ package entities
 
 import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	imageService "image-service/protobuffs"
+	imageService "image-service/protobuffs/image-service"
 )
 
 type PermanentImage struct {

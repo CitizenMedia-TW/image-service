@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"image-service/cmd/imageservice/api"
-	imageService "image-service/protobuffs"
+	imageService "image-service/protobuffs/image-service"
 	"io"
 	"io/ioutil"
 	"mime/multipart"

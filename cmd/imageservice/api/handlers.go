@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"image-service/cmd/imageservice/database/entities"
-	image_service "image-service/protobuffs"
+	image_service "image-service/protobuffs/image-service"
 	"io"
 	"net/http"
 	"strconv"

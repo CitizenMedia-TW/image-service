@@ -10,7 +10,7 @@ import (
 	"image-service/cmd/imageservice/database"
 	"image-service/cmd/imageservice/database/entities"
 	"image-service/cmd/imageservice/img_storage"
-	imageService "image-service/protobuffs"
+	imageService "image-service/protobuffs/image-service"
 	"log"
 	"net"
 	"time"

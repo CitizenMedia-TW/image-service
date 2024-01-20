@@ -3,7 +3,7 @@ package entities
 import (
 	"errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	image_service "image-service/protobuffs"
+	image_service "image-service/protobuffs/image-service"
 	"time"
 )
 
