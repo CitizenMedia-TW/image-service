@@ -36,7 +36,6 @@ func (a *App) uploadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uploader := r.FormValue("uploader")
 	usageId, _ := strconv.Atoi(r.FormValue("usage"))
 
 	usage := image_service2.ParseUsage(usageId)
@@ -70,12 +69,7 @@ func (a *App) uploadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpImage, err := entities.NewTmpImage(uploader, usage, url)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	tmpImage := entities.NewTmpImage(usage, url)
 
 	imgId, err := a.database.StoreTmpImgInfo(context.TODO(), tmpImage)
 

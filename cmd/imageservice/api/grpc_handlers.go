@@ -52,7 +52,7 @@ func (s GrpcImageService) ConfirmImageUse(ctx context.Context, req *image_servic
 		return nil, status.Error(codes.Internal, "error getting tmp img from database: "+err.Error())
 	}
 
-	if req.Strict && (*req.Usage != tmpImage.ExpectedUsage || *req.UserId != tmpImage.Uploader.Hex()) {
+	if req.Strict && (*req.Usage != tmpImage.ExpectedUsage) {
 		return nil, status.Error(codes.Unauthenticated, "wrong usage or the image doesn't belong to you")
 	}
 
