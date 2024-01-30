@@ -2,10 +2,6 @@
 
 ## Routes
 
-_*GET /*_  
-
-res: `Hello from a HandleFunc #1`
-
 _*GET /upload*_  
 
 req: form-data 
