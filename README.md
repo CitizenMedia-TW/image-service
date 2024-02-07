@@ -2,7 +2,7 @@
 
 ## Routes
 
-_*GET /upload*_  
+_*POST /upload*_  
 
 req: form-data 
 ```
