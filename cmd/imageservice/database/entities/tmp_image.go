@@ -23,3 +23,13 @@ func NewTmpImage(usage image_service.ImageUsage, path string) TmpImage {
 		ExpectedUsage: usage,
 	}
 }
+
+func NewTmpImageWithId(id primitive.ObjectID, usage image_service.ImageUsage, path string) TmpImage {
+
+	return TmpImage{
+		Id:            id,
+		Path:          path,
+		UploadedAt:    primitive.NewDateTimeFromTime(time.Now()),
+		ExpectedUsage: usage,
+	}
+}

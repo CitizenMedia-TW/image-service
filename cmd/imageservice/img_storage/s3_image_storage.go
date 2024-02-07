@@ -19,14 +19,17 @@ type S3ImageStorage struct {
 	ImageStorage
 }
 
-func (m S3ImageStorage) Store(fileSuffix string, imageData []byte) (string, error) {
+func (m S3ImageStorage) Store(fileSuffix string, imageData []byte, imageId string) (string, error) {
 	now := time.Now()
-	uid, err := uuid.NewRandom()
-	if err != nil {
-		return "", err
+	if imageId == "" {
+		uid, err := uuid.NewRandom()
+		if err != nil {
+			return "", nil
+		}
+		imageId = uid.String()
 	}
-	key := fmt.Sprintf("/images/%d/%d/%d/%s.%s", now.Year(), now.Month(), now.Day(), uid, fileSuffix)
-	_, err = m.svc.PutObject(&s3.PutObjectInput{
+	key := fmt.Sprintf("/images/%d/%d/%d/%s.%s", now.Year(), now.Month(), now.Day(), imageId, fileSuffix)
+	_, err := m.svc.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String(m.config.S3Bucket),
 		Key:    aws.String(key),
 		Body:   bytes.NewReader(imageData),

@@ -16,6 +16,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -26,6 +27,9 @@ func TestUpload(t *testing.T) {
 	// Specify the file path of the image you want to upload
 	imagePath := "../test_image.png"
 	response := PostImage(imagePath)
+	assert.NotEmpty(t, response.Url)
+	assert.NotEmpty(t, response.ImageId)
+	assert.True(t, strings.Contains(response.Url, response.ImageId))
 	r, err := http.Get(response.Url)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, r.StatusCode)

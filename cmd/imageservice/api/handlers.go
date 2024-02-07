@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"image-service/cmd/imageservice/database/entities"
 	image_service2 "image-service/protobuffs/image-service"
 	"io"
@@ -63,15 +64,17 @@ func (a *App) uploadImage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "該檔案不是圖片", http.StatusBadRequest)
 	}
 
-	url, err := a.storage.Store(extractFileNameSuffix(handler.Filename), imageData)
+	imgId := primitive.NewObjectID()
+
+	url, err := a.storage.Store(extractFileNameSuffix(handler.Filename), imageData, imgId.Hex())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	tmpImage := entities.NewTmpImage(usage, url)
+	tmpImage := entities.NewTmpImageWithId(imgId, usage, url)
 
-	imgId, err := a.database.StoreTmpImgInfo(context.TODO(), tmpImage)
+	_, err = a.database.StoreTmpImgInfo(context.TODO(), tmpImage)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -82,7 +85,7 @@ func (a *App) uploadImage(w http.ResponseWriter, r *http.Request) {
 	res := UploadImageResponse{
 		Message: "Image uploaded successfully",
 		Url:     a.Config.Host + url,
-		ImageId: imgId,
+		ImageId: imgId.Hex(),
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
