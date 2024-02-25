@@ -19,11 +19,22 @@ type UploadImageResponse struct {
 	ImageId string `json:"imageId"`
 }
 
+// Custom http error handler
+func (a *App) httpError(w *http.ResponseWriter, err string, statusCode int) {
+	(*w).Header().Set("Content-Type", "application/json")
+	res := struct {
+		Message string `json:"message"`
+		Error   string `json:"error"`
+	}{Message: "Failed", Error: err}
+	json.NewEncoder(*w).Encode(res)
+	return
+}
+
 // uploadImage is the handler for the upload route
 func (a *App) uploadImage(w http.ResponseWriter, r *http.Request) {
 	// Check if the request is a POST request
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		a.httpError(&w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	// Get the collection name from the query string
@@ -33,7 +44,7 @@ func (a *App) uploadImage(w http.ResponseWriter, r *http.Request) {
 	parseErr := r.ParseMultipartForm(10 << 20)
 
 	if parseErr != nil {
-		http.Error(w, "Could not parse multipart form", http.StatusBadRequest)
+		a.httpError(&w, "Could not parse multipart form", http.StatusBadRequest)
 		return
 	}
 
@@ -41,7 +52,7 @@ func (a *App) uploadImage(w http.ResponseWriter, r *http.Request) {
 
 	usage := image_service2.ParseUsage(usageId)
 	if usage == image_service2.ImageUsage_Undefined {
-		http.Error(w, "Invalid image usage.", http.StatusBadRequest)
+		a.httpError(&w, "Invalid image usage.", http.StatusBadRequest)
 		return
 	}
 
@@ -61,14 +72,14 @@ func (a *App) uploadImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !strings.Contains(http.DetectContentType(imageData), "image") {
-		http.Error(w, "該檔案不是圖片", http.StatusBadRequest)
+		a.httpError(&w, "該檔案不是圖片", http.StatusBadRequest)
 	}
 
 	imgId := primitive.NewObjectID()
 
 	url, err := a.storage.Store(extractFileNameSuffix(handler.Filename), imageData, imgId.Hex())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		a.httpError(&w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -77,13 +88,13 @@ func (a *App) uploadImage(w http.ResponseWriter, r *http.Request) {
 	_, err = a.database.StoreTmpImgInfo(context.TODO(), tmpImage)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		a.httpError(&w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Respond with success message
 	res := UploadImageResponse{
-		Message: "Image uploaded successfully",
+		Message: "Success",
 		Url:     a.Config.Host + url,
 		ImageId: imgId.Hex(),
 	}
