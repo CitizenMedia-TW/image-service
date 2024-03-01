@@ -1,4 +1,4 @@
-package img_storage
+package storage
 
 import (
 	"bytes"
@@ -9,13 +9,13 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/google/uuid"
-	"image-service/cmd/imageservice/cnf"
+	"image-service/internal/config"
 	"time"
 )
 
 type S3ImageStorage struct {
 	svc    *s3.S3
-	config cnf.ImageServiceConfig
+	config config.ImageServiceConfig
 	ImageStorage
 }
 
@@ -48,7 +48,7 @@ func (m S3ImageStorage) Delete(path string) error {
 	return err
 }
 
-func NewS3ImageStorage(config cnf.ImageServiceConfig) S3ImageStorage {
+func NewS3ImageStorage(config config.ImageServiceConfig) S3ImageStorage {
 	sess := session.Must(session.NewSession(&aws.Config{
 		Credentials:                   credentials.NewStaticCredentials(config.S3KeyId, config.S3KeyValue, ""),
 		CredentialsChainVerboseErrors: aws.Bool(true),

@@ -7,8 +7,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"image-service/cmd/imageservice/cnf"
-	"image-service/cmd/imageservice/database/entities"
+	"image-service/internal/config"
+	"image-service/internal/database/entities"
 	"time"
 )
 
@@ -35,7 +35,7 @@ type MongoDB struct {
 	Db
 }
 
-func NewMongoDB(config cnf.ImageServiceConfig) MongoDB {
+func NewMongoDB(config config.ImageServiceConfig) MongoDB {
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(config.MongoURI))
 	if err != nil {
 		panic(err)
