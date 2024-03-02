@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/joho/godotenv"
 	"image-service/internal/app"
 	"image-service/internal/restapp"
 	"image-service/protobuffs/image-service"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -22,7 +24,15 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+func loadEnv() {
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file %s", err)
+	}
+}
+
 func TestMain(m *testing.M) {
+	loadEnv()
 	go app.StartServer()
 	time.Sleep(time.Second * 5) // Wait for the server to start
 	os.Exit(m.Run())
