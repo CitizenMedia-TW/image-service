@@ -29,7 +29,7 @@ const portNumber = ":80"
 func StartServer() {
 	log.Println("Starting image server.")
 	// Load the .env file
-	err := godotenv.Load("../../.env")
+	err := godotenv.Load()
 	if err != nil {
 		log.Fatalf("Error loading .env file %s", err)
 	}
