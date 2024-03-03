@@ -6,67 +6,75 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"image-service/cmd/imageservice/api"
+	"github.com/joho/godotenv"
+	"image-service/internal/app"
+	"image-service/internal/restapp"
 	"image-service/protobuffs/image-service"
 	"io"
-	"io/ioutil"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
-func TestUpload(t *testing.T) {
-	go api.StartServer()
-	time.Sleep(time.Second * 5)
-	// Specify the file path of the image you want to upload
-	imagePath := "../test_image.png"
-	response := PostImage(imagePath)
-	assert.NotEmpty(t, response.Url)
-	assert.NotEmpty(t, response.ImageId)
-	assert.True(t, strings.Contains(response.Url, response.ImageId))
-	r, err := http.Get(response.Url)
-	assert.NoError(t, err)
-	assert.Equal(t, 200, r.StatusCode)
+func loadEnv() {
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file %s", err)
+	}
+}
+
+func TestMain(m *testing.M) {
+	loadEnv()
+	go app.StartServer()
+	time.Sleep(time.Second * 5) // Wait for the server to start
+	os.Exit(m.Run())
 }
 
 func TestUploadAndDelete(t *testing.T) {
-	go api.StartServer()
-	time.Sleep(time.Second * 5)
-	// Specify the file path of the image you want to upload
-	imagePath := "../test_image.png"
-	response := PostImage(imagePath)
-	r, err := http.Get(response.Url)
+	time.Sleep(time.Second * 5)     // Wait for the server to start
+	imagePath := "./test_image.png" // The test image file path
+
+	// 1. Upload image via REST API
+	resUpload := postImage(imagePath)
+	assert.NotEmpty(t, resUpload.Url)
+	assert.NotEmpty(t, resUpload.ImageId)
+	assert.True(t, strings.Contains(resUpload.Url, resUpload.ImageId))
+	r, err := http.Get(resUpload.Url) // Test the given URL
 	assert.NoError(t, err)
 	assert.Equal(t, 200, r.StatusCode)
 
+	// Connect to the gRPC server
 	conn, err := grpc.Dial("localhost:1111", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err)
 	client := image_service.NewImageServiceClient(conn)
 
-	//confirm usage
-	res2, err := client.ConfirmImageUse(context.TODO(), &image_service.ConfirmImageUsedRequest{
-		ImageId: response.ImageId,
+	// 2. Confirm usage
+	resConfirm, err := client.ConfirmImageUse(context.TODO(), &image_service.ConfirmImageUsedRequest{
+		ImageId: resUpload.ImageId,
 		Strict:  false,
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, res2.Success, true)
+	assert.Equal(t, resConfirm.Success, true)
 
-	//delete permanent image
-	res, err := client.DeleteImage(context.TODO(), &image_service.DeleteImageRequest{ImageId: response.ImageId})
+	// 3. Delete permanent image just uploaded
+	resDelete, err := client.DeleteImage(context.TODO(), &image_service.DeleteImageRequest{ImageId: resUpload.ImageId})
 	assert.NoError(t, err)
-	assert.Equal(t, true, res.Success)
-	r, err = http.Get(response.Url)
+	assert.Equal(t, true, resDelete.Success)
+	r, err = http.Get(resUpload.Url)
 	assert.Equal(t, 403, r.StatusCode, "Should be deleted")
 }
 
-func PostImage(imagePath string) api.UploadImageResponse {
-	uResponse := api.UploadImageResponse{}
+func postImage(imagePath string) restapp.UploadImageResponse {
+	uResponse := restapp.UploadImageResponse{}
+
 	// Create a new HTTP request with a POST method
 	req, err := http.NewRequest("POST", "http://localhost:80/upload", nil)
 	if err != nil {
@@ -117,7 +125,7 @@ func PostImage(imagePath string) api.UploadImageResponse {
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	// Set the request body to the buffer containing the multipart form data
-	req.Body = ioutil.NopCloser(&requestBody)
+	req.Body = io.NopCloser(&requestBody)
 
 	// Perform the HTTP request
 	client := http.Client{}
@@ -130,7 +138,7 @@ func PostImage(imagePath string) api.UploadImageResponse {
 
 	// Print the response status and body
 	fmt.Println("Response Status:", response.Status)
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		fmt.Println("Error reading response body:", err)
 		return uResponse

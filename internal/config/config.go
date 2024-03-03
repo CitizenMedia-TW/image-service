@@ -1,4 +1,4 @@
-package cnf
+package config
 
 import "os"
 

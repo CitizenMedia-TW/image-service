@@ -1,4 +1,4 @@
-package api
+package grpcapp
 
 import (
 	"context"
@@ -7,9 +7,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"image-service/cmd/imageservice/database"
-	"image-service/cmd/imageservice/database/entities"
-	"image-service/cmd/imageservice/img_storage"
+	"image-service/internal/database"
+	"image-service/internal/database/entities"
+	"image-service/internal/storage"
 	"image-service/protobuffs/image-service"
 	"log"
 	"net"
@@ -18,11 +18,11 @@ import (
 
 type GrpcImageService struct {
 	database     database.Db
-	imageStorage img_storage.ImageStorage
+	imageStorage storage.ImageStorage
 	image_service.ImageServiceServer
 }
 
-func StartGrpc(storage img_storage.ImageStorage, db database.Db) {
+func StartGrpc(storage storage.ImageStorage, db database.Db) {
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", 1111))
 
 	if err != nil {

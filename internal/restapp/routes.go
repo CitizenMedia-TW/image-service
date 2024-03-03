@@ -1,11 +1,11 @@
-package api
+package restapp
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"image-service/cmd/imageservice/database/entities"
+	"image-service/internal/database/entities"
 	image_service2 "image-service/protobuffs/image-service"
 	"io"
 	"net/http"
@@ -20,7 +20,7 @@ type UploadImageResponse struct {
 }
 
 // Custom http error handler
-func (a *App) httpError(w *http.ResponseWriter, err string, statusCode int) {
+func (a *RestImageService) httpError(w *http.ResponseWriter, err string, statusCode int) {
 	(*w).Header().Set("Content-Type", "application/json")
 	res := struct {
 		Message string `json:"message"`
@@ -31,7 +31,7 @@ func (a *App) httpError(w *http.ResponseWriter, err string, statusCode int) {
 }
 
 // uploadImage is the handler for the upload route
-func (a *App) uploadImage(w http.ResponseWriter, r *http.Request) {
+func (a *RestImageService) uploadImage(w http.ResponseWriter, r *http.Request) {
 	// Check if the request is a POST request
 	if r.Method != http.MethodPost {
 		a.httpError(&w, "Method not allowed", http.StatusMethodNotAllowed)
