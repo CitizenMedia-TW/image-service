@@ -1,22 +1,28 @@
 # image-service
 
-## Routes
+- RESTful APIs running on `localhost:80`
+- gRPC APIs running on `localhost:1111`
 
-_*GET /*_  
+---
 
-res: `Hello from a HandleFunc #1`
+### Upload images
 
-_*GET /upload*_  
+<details>
+<summary><code>POST</code> <code><b>/upload</b></code> <code>(Upload image to image server)</code></summary>
 
-req: form-data `image: <file>` params `?collection=<collection name>`  
-res: json `message: string, id: string`
+##### Body (form-data)
 
-_*GET /display*_  
+> | key      | required | data type | description                       |
+> | -------- | -------- | --------- | --------------------------------- |
+> | image    | true     | file      | The content type should be image. |
+> | uploader | true     | text      | Author's MongoDB object ID        |
+> | usage    | true     | text      | "1" for story                     |
 
-req: params `?_id=<image object id>&collection=<collection name>`  
-res: Content-Type will be a file
+##### Responses
 
-_*DELETE /delete*_  
+> | http code    | content-type       | response                                                                                |
+> | ------------ | ------------------ | --------------------------------------------------------------------------------------- |
+> | `200`        | `application/json` | `{"message": "Success", "Url": "url of the image", "imageId": "ObjectId of the image"}` |
+> | `400`, `500` | `application/json` | `{"message": "Failed", "error":"Error messages"}`                                       |
 
-req: params `?_id=<image object id>&collection=<collection name>`  
-req: json `message: string, id: string`
+</details>
